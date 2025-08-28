@@ -8,7 +8,8 @@ const {
   updateProfile,
   forgotPassword,
   resetPassword,
-  refreshToken
+  refreshToken,
+  deleteAccount
 } = require('../controllers/authController');
 
 const { protect } = require('../middlewares/auth');
@@ -54,5 +55,6 @@ router.post('/reset-password/:resettoken', validate(resetPasswordSchema), resetP
 router.post('/logout', protect, logout);
 router.get('/profile', protect, getProfile);
 router.put('/profile', protect, validate(updateProfileSchema), updateProfile);
+router.delete('/delete-account', protect, deleteAccount);
 
 module.exports = router;

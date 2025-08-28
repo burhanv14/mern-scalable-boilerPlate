@@ -10,9 +10,15 @@ export const AUTH_CONFIG: AuthConfig = {
 
 // API endpoint constants
 export const AUTH_ENDPOINTS = {
-  LOGIN: "/endpoint/login",
-  SIGNUP: "/endpoint/signup",
-  DELETE_ACCOUNT: "/endpoint/deleteAccount",
+  LOGIN: "/auth/login",
+  SIGNUP: "/auth/register",
+  LOGOUT: "/auth/logout",
+  REFRESH: "/auth/refresh",
+  PROFILE: "/auth/profile",
+  UPDATE_PROFILE: "/auth/profile",
+  FORGOT_PASSWORD: "/auth/reset-password",
+  RESET_PASSWORD: "/auth/reset-password",
+  DELETE_ACCOUNT: "/auth/delete-account", // This endpoint needs to be added to backend
 } as const;
 
 // Token configuration
@@ -25,6 +31,7 @@ export const TOKEN_CONFIG = {
 // Storage keys
 export const STORAGE_KEYS = {
   AUTH_TOKEN: AUTH_CONFIG.tokenStorageKey,
+  REFRESH_TOKEN: "refresh_token",
   USER_DATA: "user_data",
   AUTH_STATE: "auth_state",
 } as const;

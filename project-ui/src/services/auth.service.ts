@@ -118,8 +118,8 @@ export class AuthService {
       if (response.data.success && response.data.data) {
         const authData = response.data.data;
         
-        // Store token
-        TokenManager.setToken(authData.token);
+        // Store both tokens
+        TokenManager.setToken(authData.token, authData.refreshToken);
         
         return authData;
       }
@@ -144,8 +144,8 @@ export class AuthService {
       if (response.data.success && response.data.data) {
         const authData = response.data.data;
         
-        // Store token
-        TokenManager.setToken(authData.token);
+        // Store both tokens
+        TokenManager.setToken(authData.token, authData.refreshToken);
         
         return authData;
       }
@@ -190,12 +190,132 @@ export class AuthService {
         return false;
       }
 
-      // Optionally verify with server
+      // Verify with server by getting profile
       const api = this.createAxiosInstance();
-      const response = await api.get("/auth/validate");
+      const response = await api.get(AUTH_ENDPOINTS.PROFILE);
       return response.status === 200;
     } catch (error) {
       return false;
+    }
+  }
+
+  /**
+   * Logout user
+   */
+  async logout(): Promise<void> {
+    try {
+      const api = this.createAxiosInstance();
+      await api.post(AUTH_ENDPOINTS.LOGOUT);
+    } catch (error) {
+      // Even if server logout fails, clear local tokens
+      console.warn('Server logout failed:', error);
+    } finally {
+      // Always clear tokens on logout
+      TokenManager.clearTokens();
+    }
+  }
+
+  /**
+   * Get user profile
+   */
+  async getProfile(): Promise<any> {
+    try {
+      const api = this.createAxiosInstance();
+      const response: AxiosResponse<ApiResponse<any>> = await api.get(AUTH_ENDPOINTS.PROFILE);
+
+      if (response.data.success && response.data.data) {
+        return response.data.data;
+      }
+
+      throw new Error(response.data.message || 'Failed to get profile');
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Update user profile
+   */
+  async updateProfile(data: any): Promise<any> {
+    try {
+      const api = this.createAxiosInstance();
+      const response: AxiosResponse<ApiResponse<any>> = await api.put(AUTH_ENDPOINTS.UPDATE_PROFILE, data);
+
+      if (response.data.success && response.data.data) {
+        return response.data.data;
+      }
+
+      throw new Error(response.data.message || 'Failed to update profile');
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Forgot password
+   */
+  async forgotPassword(email: string): Promise<void> {
+    try {
+      const api = this.createAxiosInstance();
+      const response: AxiosResponse<ApiResponse<void>> = await api.post(AUTH_ENDPOINTS.FORGOT_PASSWORD, { email });
+
+      if (!response.data.success) {
+        throw new Error(response.data.message || 'Failed to send reset email');
+      }
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Reset password with token
+   */
+  async resetPassword(resetToken: string, password: string): Promise<void> {
+    try {
+      const api = this.createAxiosInstance();
+      const response: AxiosResponse<ApiResponse<void>> = await api.post(
+        `${AUTH_ENDPOINTS.RESET_PASSWORD}/${resetToken}`, 
+        { password }
+      );
+
+      if (!response.data.success) {
+        throw new Error(response.data.message || 'Failed to reset password');
+      }
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Refresh authentication token
+   */
+  async refreshToken(): Promise<AuthResponse> {
+    try {
+      const refreshToken = TokenManager.getRefreshToken();
+      if (!refreshToken) {
+        throw new Error('No refresh token available');
+      }
+
+      const api = this.createAxiosInstance();
+      const response: AxiosResponse<ApiResponse<AuthResponse>> = await api.post(
+        AUTH_ENDPOINTS.REFRESH, 
+        { refreshToken }
+      );
+
+      if (response.data.success && response.data.data) {
+        const authData = response.data.data;
+        
+        // Store new token
+        TokenManager.setToken(authData.token);
+        
+        return authData;
+      }
+
+      throw new Error(response.data.message || 'Failed to refresh token');
+    } catch (error) {
+      // Clear tokens on refresh failure
+      TokenManager.clearTokens();
+      throw this.handleError(error);
     }
   }
 

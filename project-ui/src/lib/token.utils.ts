@@ -9,13 +9,17 @@ export class TokenManager {
   /**
    * Set authentication token in storage
    */
-  static setToken(token: string): void {
+  static setToken(token: string, refreshToken?: string): void {
     try {
       localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, token);
       Cookies.set(COOKIE_CONFIG.TOKEN_COOKIE_NAME, token, {
         ...COOKIE_CONFIG.DEFAULT_OPTIONS,
         expires: 7, // 7 days
       });
+
+      if (refreshToken) {
+        localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
+      }
     } catch (error) {
       console.error("Failed to store token:", error);
     }
@@ -39,11 +43,35 @@ export class TokenManager {
   }
 
   /**
+   * Set refresh token in storage
+   */
+  static setRefreshToken(refreshToken: string): void {
+    try {
+      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
+    } catch (error) {
+      console.error("Failed to store refresh token:", error);
+    }
+  }
+
+  /**
+   * Get refresh token from storage
+   */
+  static getRefreshToken(): string | null {
+    try {
+      return localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
+    } catch (error) {
+      console.error("Failed to retrieve refresh token:", error);
+      return null;
+    }
+  }
+
+  /**
    * Remove all tokens from storage
    */
   static clearTokens(): void {
     try {
       localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+      localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
       localStorage.removeItem(STORAGE_KEYS.USER_DATA);
       localStorage.removeItem(STORAGE_KEYS.AUTH_STATE);
       

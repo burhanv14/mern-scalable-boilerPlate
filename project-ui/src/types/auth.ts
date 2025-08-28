@@ -42,6 +42,7 @@ export interface DeleteAccountRequest {
 export interface AuthResponse {
   user: User;
   token: string;
+  refreshToken?: string;
   expiresAt: string;
 }
 
