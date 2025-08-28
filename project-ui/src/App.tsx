@@ -1,11 +1,14 @@
-import { Button } from './components/ui/button'
+import { RouterProvider } from 'react-router-dom';
+import { NuqsAdapter } from 'nuqs/adapters/react-router/v7';
+import { AuthProvider } from '@/components/auth/AuthProvider';
+import { router } from '@/routes';
 
 export default function App() {
   return (
-    <div>
-      <Button className='flex flex-col items-centre justify-center border border-red-500'>
-        Click me
-      </Button>
-    </div>
-  )
+    <NuqsAdapter>
+      <AuthProvider>
+        <RouterProvider router={router} />
+      </AuthProvider>
+    </NuqsAdapter>
+  );
 }

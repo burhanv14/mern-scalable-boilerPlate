@@ -36,7 +36,7 @@ export const useAuthStore = create<AuthStore>()(
 
         try {
           const authResponse = await authService.login(credentials);
-          
+
           set({
             user: authResponse.user,
             token: authResponse.token,
@@ -48,9 +48,9 @@ export const useAuthStore = create<AuthStore>()(
 
           // Save user data to storage
           AuthStorage.saveUserData(authResponse.user);
-          
         } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : "Login failed";
+          const errorMessage =
+            error instanceof Error ? error.message : "Login failed";
           set({
             user: null,
             token: null,
@@ -68,7 +68,7 @@ export const useAuthStore = create<AuthStore>()(
 
         try {
           const authResponse = await authService.signup(data);
-          
+
           set({
             user: authResponse.user,
             token: authResponse.token,
@@ -80,9 +80,9 @@ export const useAuthStore = create<AuthStore>()(
 
           // Save user data to storage
           AuthStorage.saveUserData(authResponse.user);
-          
         } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : "Signup failed";
+          const errorMessage =
+            error instanceof Error ? error.message : "Signup failed";
           set({
             user: null,
             token: null,
@@ -105,7 +105,6 @@ export const useAuthStore = create<AuthStore>()(
           // Clear storage
           TokenManager.clearTokens();
           AuthStorage.clearAll();
-          
         } catch (error) {
           console.error("Logout error:", error);
           // Still clear local state even if there's an error
@@ -120,7 +119,7 @@ export const useAuthStore = create<AuthStore>()(
 
         try {
           await authService.deleteAccount(data);
-          
+
           // Clear state after successful deletion
           set({
             ...initialState,
@@ -129,9 +128,9 @@ export const useAuthStore = create<AuthStore>()(
           // Clear storage
           TokenManager.clearTokens();
           AuthStorage.clearAll();
-          
         } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : "Failed to delete account";
+          const errorMessage =
+            error instanceof Error ? error.message : "Failed to delete account";
           set({
             isLoading: false,
             error: errorMessage,
@@ -202,21 +201,50 @@ export const useAuthStore = create<AuthStore>()(
 // Selectors for better performance
 export const useAuthUser = () => useAuthStore((state) => state.user);
 export const useAuthToken = () => useAuthStore((state) => state.token);
-export const useIsAuthenticated = () => useAuthStore((state) => state.isAuthenticated);
+export const useIsAuthenticated = () =>
+  useAuthStore((state) => state.isAuthenticated);
 export const useAuthLoading = () => useAuthStore((state) => state.isLoading);
 export const useAuthError = () => useAuthStore((state) => state.error);
-export const useUserRoles = () => useAuthStore((state) => state.user?.roles || []);
 
-// Action selectors
+// Fixed: Cache the empty array to prevent infinite re-renders
+const EMPTY_ROLES_ARRAY: string[] = [];
+export const useUserRoles = () =>
+  useAuthStore((state) => state.user?.roles ?? EMPTY_ROLES_ARRAY);
+
+// Separate action selectors to avoid creating new objects on every render
+export const useLoginAction = () => useAuthStore((state) => state.login);
+export const useSignupAction = () => useAuthStore((state) => state.signup);
+export const useLogoutAction = () => useAuthStore((state) => state.logout);
+export const useDeleteAccountAction = () =>
+  useAuthStore((state) => state.deleteAccount);
+export const useClearErrorAction = () =>
+  useAuthStore((state) => state.clearError);
+export const useSetLoadingAction = () =>
+  useAuthStore((state) => state.setLoading);
+export const useCheckAuthStatusAction = () =>
+  useAuthStore((state) => state.checkAuthStatus);
+export const useUpdateProfileAction = () =>
+  useAuthStore((state) => state.updateUserProfile);
+
+// Legacy action selectors - use individual selectors above for better performance
 export const useAuthActions = () => {
-  return useAuthStore((state) => ({
-    login: state.login,
-    signup: state.signup,
-    logout: state.logout,
-    deleteAccount: state.deleteAccount,
-    clearError: state.clearError,
-    setLoading: state.setLoading,
-    checkAuthStatus: state.checkAuthStatus,
-    updateUserProfile: state.updateUserProfile,
-  }));
+  const login = useLoginAction();
+  const signup = useSignupAction();
+  const logout = useLogoutAction();
+  const deleteAccount = useDeleteAccountAction();
+  const clearError = useClearErrorAction();
+  const setLoading = useSetLoadingAction();
+  const checkAuthStatus = useCheckAuthStatusAction();
+  const updateUserProfile = useUpdateProfileAction();
+
+  return {
+    login,
+    signup,
+    logout,
+    deleteAccount,
+    clearError,
+    setLoading,
+    checkAuthStatus,
+    updateUserProfile,
+  };
 };

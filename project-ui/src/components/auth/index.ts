@@ -1,2 +1,3 @@
-export * from './AuthProvider';
-export * from './AuthForms';
+export { AuthProvider } from './AuthProvider';
+export { ProtectedRoute } from './ProtectedRoute';
+export { PublicRoute } from './PublicRoute';

@@ -7,7 +7,13 @@ import {
   useAuthLoading,
   useAuthError,
   useUserRoles,
-  useAuthActions as useStoreAuthActions,
+  useLoginAction,
+  useSignupAction,
+  useLogoutAction,
+  useDeleteAccountAction,
+  useClearErrorAction,
+  useUpdateProfileAction,
+  useCheckAuthStatusAction,
 } from "../stores/auth.store";
 import type {
   LoginRequest,
@@ -29,12 +35,20 @@ export const useAuth = () => {
   const isLoading = useAuthLoading();
   const error = useAuthError();
   const roles = useUserRoles();
-  const actions = useStoreAuthActions();
+  
+  // Individual action selectors to prevent infinite loops
+  const login = useLoginAction();
+  const signup = useSignupAction();
+  const logout = useLogoutAction();
+  const deleteAccount = useDeleteAccountAction();
+  const clearError = useClearErrorAction();
+  const updateProfile = useUpdateProfileAction();
+  const checkAuthStatus = useCheckAuthStatusAction();
 
   // Initialize auth check on mount
   useEffect(() => {
-    actions.checkAuthStatus();
-  }, [actions]);
+    checkAuthStatus();
+  }, [checkAuthStatus]);
 
   return {
     // State
@@ -46,13 +60,13 @@ export const useAuth = () => {
     roles,
     
     // Actions
-    login: actions.login,
-    signup: actions.signup,
-    logout: actions.logout,
-    deleteAccount: actions.deleteAccount,
-    clearError: actions.clearError,
-    updateProfile: actions.updateUserProfile,
-    checkAuthStatus: actions.checkAuthStatus,
+    login,
+    signup,
+    logout,
+    deleteAccount,
+    clearError,
+    updateProfile,
+    checkAuthStatus,
     
     // Utility methods
     hasRole: (role: UserRole) => roles.includes(role),
@@ -86,7 +100,7 @@ export const useAuthStatus = () => {
  */
 export const useUserProfile = () => {
   const user = useAuthUser();
-  const { updateUserProfile } = useStoreAuthActions();
+  const updateUserProfile = useUpdateProfileAction();
   const isLoading = useAuthLoading();
 
   const updateProfile = useCallback(
@@ -197,14 +211,30 @@ export const usePermissions = () => {
  * Hook for authentication actions only
  */
 export const useAuthActionsHook = () => {
-  return useStoreAuthActions();
+  const login = useLoginAction();
+  const signup = useSignupAction();
+  const logout = useLogoutAction();
+  const deleteAccount = useDeleteAccountAction();
+  const clearError = useClearErrorAction();
+  const updateProfile = useUpdateProfileAction();
+  const checkAuthStatus = useCheckAuthStatusAction();
+  
+  return {
+    login,
+    signup,
+    logout,
+    deleteAccount,
+    clearError,
+    updateUserProfile: updateProfile,
+    checkAuthStatus,
+  };
 };
 
 /**
  * Hook for login functionality
  */
 export const useLogin = () => {
-  const { login } = useStoreAuthActions();
+  const login = useLoginAction();
   const isLoading = useAuthLoading();
   const error = useAuthError();
 
@@ -232,7 +262,7 @@ export const useLogin = () => {
  * Hook for signup functionality
  */
 export const useSignup = () => {
-  const { signup } = useStoreAuthActions();
+  const signup = useSignupAction();
   const isLoading = useAuthLoading();
   const error = useAuthError();
 
@@ -260,7 +290,7 @@ export const useSignup = () => {
  * Hook for logout functionality
  */
 export const useLogout = () => {
-  const { logout } = useStoreAuthActions();
+  const logout = useLogoutAction();
 
   const logoutUser = useCallback(() => {
     logout();
@@ -275,7 +305,7 @@ export const useLogout = () => {
  * Hook for account deletion
  */
 export const useDeleteAccount = () => {
-  const { deleteAccount } = useStoreAuthActions();
+  const deleteAccount = useDeleteAccountAction();
   const isLoading = useAuthLoading();
   const error = useAuthError();
 
