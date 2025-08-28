@@ -36,24 +36,6 @@ export const useAuth = () => {
     actions.checkAuthStatus();
   }, [actions]);
 
-  // Auto-refresh token when it's about to expire
-  useEffect(() => {
-    if (!token || !isAuthenticated) return;
-
-    const checkTokenExpiration = () => {
-      if (TokenManager.isTokenExpiringSoon(token, 5)) {
-        actions.refreshTokens().catch(() => {
-          // Token refresh failed, user will be logged out
-        });
-      }
-    };
-
-    // Check every minute
-    const interval = setInterval(checkTokenExpiration, 60000);
-    
-    return () => clearInterval(interval);
-  }, [token, isAuthenticated, actions]);
-
   return {
     // State
     user,
@@ -68,7 +50,6 @@ export const useAuth = () => {
     signup: actions.signup,
     logout: actions.logout,
     deleteAccount: actions.deleteAccount,
-    refreshTokens: actions.refreshTokens,
     clearError: actions.clearError,
     updateProfile: actions.updateUserProfile,
     checkAuthStatus: actions.checkAuthStatus,
@@ -136,9 +117,7 @@ export const useUserProfile = () => {
  */
 export const useAuthTokens = () => {
   const token = useAuthStore((state) => state.token);
-  const refreshToken = useAuthStore((state) => state.refreshToken);
   const expiresAt = useAuthStore((state) => state.expiresAt);
-  const { refreshTokens } = useStoreAuthActions();
 
   const getAuthHeader = useCallback(() => {
     return TokenManager.createAuthHeader(token || undefined);
@@ -148,23 +127,16 @@ export const useAuthTokens = () => {
     return token ? !TokenManager.isTokenExpired(token) : false;
   }, [token]);
 
-  const isTokenExpiringSoon = useCallback((bufferMinutes: number = 5) => {
-    return token ? TokenManager.isTokenExpiringSoon(token, bufferMinutes) : true;
-  }, [token]);
-
   const getTimeUntilExpiration = useCallback(() => {
     return token ? TokenManager.getTimeUntilExpiration(token) : 0;
   }, [token]);
 
   return {
     token,
-    refreshToken,
     expiresAt,
     bearerToken: getAuthHeader(),
     isValid: isTokenValid(),
-    isExpiringSoon: isTokenExpiringSoon(),
     timeUntilExpiration: getTimeUntilExpiration(),
-    refresh: refreshTokens,
   };
 };
 

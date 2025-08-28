@@ -5,8 +5,6 @@ import type {
   SignupRequest,
   DeleteAccountRequest,
   AuthResponse,
-  RefreshTokenResponse,
-  User,
 } from "../types/auth";
 import type { ApiResponse } from "../types/api";
 import { AUTH_ENDPOINTS, ENV, AUTH_ERROR_MESSAGES } from "../config/auth.config";
@@ -61,26 +59,11 @@ export class AuthService {
     // Response interceptor for error handling
     instance.interceptors.response.use(
       (response) => response,
-      async (error) => {
-        const originalRequest = error.config;
-
-        // Handle token expiration
-        if (error.response?.status === 401 && !originalRequest._retry) {
-          originalRequest._retry = true;
-          
-          try {
-            await this.refreshTokens();
-            const newToken = TokenManager.getToken();
-            if (newToken) {
-              originalRequest.headers.Authorization = TokenManager.createAuthHeader(newToken);
-              return instance(originalRequest);
-            }
-          } catch (refreshError) {
-            // Refresh failed, redirect to login
-            TokenManager.clearTokens();
-            window.location.href = "/login";
-            return Promise.reject(refreshError);
-          }
+      (error) => {
+        // Handle token expiration by clearing tokens and redirecting
+        if (error.response?.status === 401) {
+          TokenManager.clearTokens();
+          window.location.href = "/login";
         }
 
         return Promise.reject(this.handleError(error));
@@ -135,9 +118,8 @@ export class AuthService {
       if (response.data.success && response.data.data) {
         const authData = response.data.data;
         
-        // Store tokens
+        // Store token
         TokenManager.setToken(authData.token);
-        TokenManager.setRefreshToken(authData.refreshToken);
         
         return authData;
       }
@@ -162,9 +144,8 @@ export class AuthService {
       if (response.data.success && response.data.data) {
         const authData = response.data.data;
         
-        // Store tokens
+        // Store token
         TokenManager.setToken(authData.token);
-        TokenManager.setRefreshToken(authData.refreshToken);
         
         return authData;
       }
@@ -192,105 +173,6 @@ export class AuthService {
 
       // Clear tokens after successful account deletion
       TokenManager.clearTokens();
-    } catch (error) {
-      throw this.handleError(error);
-    }
-  }
-
-  /**
-   * Refresh authentication tokens
-   */
-  async refreshTokens(): Promise<RefreshTokenResponse> {
-    try {
-      const refreshToken = TokenManager.getRefreshToken();
-      if (!refreshToken) {
-        throw new Error("No refresh token available");
-      }
-
-      const api = this.createAxiosInstance();
-      const response: AxiosResponse<ApiResponse<RefreshTokenResponse>> = await api.post(
-        AUTH_ENDPOINTS.REFRESH_TOKEN,
-        { refreshToken }
-      );
-
-      if (response.data.success && response.data.data) {
-        const tokenData = response.data.data;
-        
-        // Update stored tokens
-        TokenManager.setToken(tokenData.token);
-        TokenManager.setRefreshToken(tokenData.refreshToken);
-        
-        return tokenData;
-      }
-
-      throw new Error(response.data.message || AUTH_ERROR_MESSAGES.REFRESH_TOKEN_FAILED);
-    } catch (error) {
-      // Clear tokens if refresh fails
-      TokenManager.clearTokens();
-      throw this.handleError(error);
-    }
-  }
-
-  /**
-   * Logout user
-   */
-  async logout(): Promise<void> {
-    try {
-      const api = this.createAxiosInstance();
-      
-      // Try to notify server about logout
-      try {
-        await api.post(AUTH_ENDPOINTS.LOGOUT);
-      } catch (error) {
-        // Don't fail logout if server request fails
-        console.warn("Failed to notify server about logout:", error);
-      }
-
-      // Always clear local tokens
-      TokenManager.clearTokens();
-    } catch (error) {
-      // Ensure tokens are cleared even if logout request fails
-      TokenManager.clearTokens();
-      throw this.handleError(error);
-    }
-  }
-
-  /**
-   * Get current user profile
-   */
-  async getCurrentUser(): Promise<User> {
-    try {
-      const api = this.createAxiosInstance();
-      const response: AxiosResponse<ApiResponse<User>> = await api.get(
-        AUTH_ENDPOINTS.PROFILE
-      );
-
-      if (response.data.success && response.data.data) {
-        return response.data.data;
-      }
-
-      throw new Error(response.data.message || "Failed to fetch user profile");
-    } catch (error) {
-      throw this.handleError(error);
-    }
-  }
-
-  /**
-   * Update user profile
-   */
-  async updateProfile(updates: Partial<User>): Promise<User> {
-    try {
-      const api = this.createAxiosInstance();
-      const response: AxiosResponse<ApiResponse<User>> = await api.put(
-        AUTH_ENDPOINTS.PROFILE,
-        updates
-      );
-
-      if (response.data.success && response.data.data) {
-        return response.data.data;
-      }
-
-      throw new Error(response.data.message || "Failed to update profile");
     } catch (error) {
       throw this.handleError(error);
     }

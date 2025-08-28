@@ -39,50 +39,15 @@ export class TokenManager {
   }
 
   /**
-   * Set refresh token in storage
-   */
-  static setRefreshToken(refreshToken: string): void {
-    try {
-      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
-      Cookies.set(COOKIE_CONFIG.REFRESH_TOKEN_COOKIE_NAME, refreshToken, {
-        ...COOKIE_CONFIG.DEFAULT_OPTIONS,
-        expires: 30, // 30 days
-      });
-    } catch (error) {
-      console.error("Failed to store refresh token:", error);
-    }
-  }
-
-  /**
-   * Get refresh token from storage
-   */
-  static getRefreshToken(): string | null {
-    try {
-      return (
-        localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN) ||
-        Cookies.get(COOKIE_CONFIG.REFRESH_TOKEN_COOKIE_NAME) ||
-        null
-      );
-    } catch (error) {
-      console.error("Failed to retrieve refresh token:", error);
-      return null;
-    }
-  }
-
-  /**
    * Remove all tokens from storage
    */
   static clearTokens(): void {
     try {
       localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
-      localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
       localStorage.removeItem(STORAGE_KEYS.USER_DATA);
       localStorage.removeItem(STORAGE_KEYS.AUTH_STATE);
       
       Cookies.remove(COOKIE_CONFIG.TOKEN_COOKIE_NAME, {
-        path: COOKIE_CONFIG.DEFAULT_OPTIONS.path,
-      });
-      Cookies.remove(COOKIE_CONFIG.REFRESH_TOKEN_COOKIE_NAME, {
         path: COOKIE_CONFIG.DEFAULT_OPTIONS.path,
       });
     } catch (error) {
@@ -95,13 +60,6 @@ export class TokenManager {
    */
   static hasToken(): boolean {
     return Boolean(this.getToken());
-  }
-
-  /**
-   * Check if refresh token exists
-   */
-  static hasRefreshToken(): boolean {
-    return Boolean(this.getRefreshToken());
   }
 
   /**
@@ -134,23 +92,6 @@ export class TokenManager {
 
       const currentTime = Math.floor(Date.now() / 1000);
       return payload.exp < currentTime;
-    } catch (error) {
-      console.error("Failed to check token expiration:", error);
-      return true;
-    }
-  }
-
-  /**
-   * Check if token will expire soon (within the buffer time)
-   */
-  static isTokenExpiringSoon(token: string, bufferMinutes: number = 5): boolean {
-    try {
-      const payload = this.decodeToken(token);
-      if (!payload) return true;
-
-      const currentTime = Math.floor(Date.now() / 1000);
-      const bufferSeconds = bufferMinutes * 60;
-      return payload.exp < currentTime + bufferSeconds;
     } catch (error) {
       console.error("Failed to check token expiration:", error);
       return true;

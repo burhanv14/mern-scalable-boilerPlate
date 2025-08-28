@@ -42,7 +42,6 @@ export interface DeleteAccountRequest {
 export interface AuthResponse {
   user: User;
   token: string;
-  refreshToken: string;
   expiresAt: string;
 }
 
@@ -50,17 +49,10 @@ export interface LoginResponse extends AuthResponse {}
 
 export interface SignupResponse extends AuthResponse {}
 
-export interface RefreshTokenResponse {
-  token: string;
-  refreshToken: string;
-  expiresAt: string;
-}
-
 // Auth store state interface
 export interface AuthState {
   user: User | null;
   token: string | null;
-  refreshToken: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
@@ -73,7 +65,6 @@ export interface AuthActions {
   signup: (data: SignupRequest) => Promise<void>;
   logout: () => void;
   deleteAccount: (data?: DeleteAccountRequest) => Promise<void>;
-  refreshTokens: () => Promise<void>;
   clearError: () => void;
   setLoading: (loading: boolean) => void;
   checkAuthStatus: () => void;
@@ -136,7 +127,6 @@ export interface AuthError {
 // Auth configuration
 export interface AuthConfig {
   tokenStorageKey: string;
-  refreshTokenStorageKey: string;
   tokenExpirationBuffer: number; // in minutes
   autoRefreshEnabled: boolean;
   persistAuth: boolean;

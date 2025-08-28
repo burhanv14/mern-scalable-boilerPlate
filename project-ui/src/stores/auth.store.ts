@@ -15,7 +15,6 @@ import { TokenManager, AuthStorage } from "../lib/token.utils";
 const initialState: AuthState = {
   user: null,
   token: null,
-  refreshToken: null,
   isAuthenticated: false,
   isLoading: false,
   error: null,
@@ -41,7 +40,6 @@ export const useAuthStore = create<AuthStore>()(
           set({
             user: authResponse.user,
             token: authResponse.token,
-            refreshToken: authResponse.refreshToken,
             expiresAt: authResponse.expiresAt,
             isAuthenticated: true,
             isLoading: false,
@@ -56,7 +54,6 @@ export const useAuthStore = create<AuthStore>()(
           set({
             user: null,
             token: null,
-            refreshToken: null,
             expiresAt: null,
             isAuthenticated: false,
             isLoading: false,
@@ -75,7 +72,6 @@ export const useAuthStore = create<AuthStore>()(
           set({
             user: authResponse.user,
             token: authResponse.token,
-            refreshToken: authResponse.refreshToken,
             expiresAt: authResponse.expiresAt,
             isAuthenticated: true,
             isLoading: false,
@@ -90,7 +86,6 @@ export const useAuthStore = create<AuthStore>()(
           set({
             user: null,
             token: null,
-            refreshToken: null,
             expiresAt: null,
             isAuthenticated: false,
             isLoading: false,
@@ -102,10 +97,7 @@ export const useAuthStore = create<AuthStore>()(
 
       logout: () => {
         try {
-          // Clear server session (don't await to avoid blocking UI)
-          authService.logout().catch(console.error);
-          
-          // Clear local state immediately
+          // Clear local state immediately (no need to call backend)
           set({
             ...initialState,
           });
@@ -116,7 +108,7 @@ export const useAuthStore = create<AuthStore>()(
           
         } catch (error) {
           console.error("Logout error:", error);
-          // Still clear local state even if server request fails
+          // Still clear local state even if there's an error
           set({ ...initialState });
           TokenManager.clearTokens();
           AuthStorage.clearAll();
@@ -148,24 +140,6 @@ export const useAuthStore = create<AuthStore>()(
         }
       },
 
-      refreshTokens: async () => {
-        try {
-          const tokenResponse = await authService.refreshTokens();
-          
-          set({
-            token: tokenResponse.token,
-            refreshToken: tokenResponse.refreshToken,
-            expiresAt: tokenResponse.expiresAt,
-            error: null,
-          });
-          
-        } catch (error) {
-          // If refresh fails, logout user
-          get().logout();
-          throw error;
-        }
-      },
-
       clearError: () => {
         set({ error: null });
       },
@@ -177,7 +151,6 @@ export const useAuthStore = create<AuthStore>()(
       checkAuthStatus: () => {
         try {
           const token = TokenManager.getToken();
-          const refreshToken = TokenManager.getRefreshToken();
           const userData = AuthStorage.getUserData();
 
           if (token && !TokenManager.isTokenExpired(token)) {
@@ -185,25 +158,11 @@ export const useAuthStore = create<AuthStore>()(
             set({
               user: userData,
               token,
-              refreshToken,
               isAuthenticated: true,
               error: null,
             });
-
-            // Check if token needs refresh soon
-            if (TokenManager.isTokenExpiringSoon(token) && refreshToken) {
-              get().refreshTokens().catch(() => {
-                // If refresh fails, user will be logged out by refreshTokens
-              });
-            }
-          } else if (refreshToken) {
-            // Try to refresh token
-            get().refreshTokens().catch(() => {
-              // If refresh fails, clear state
-              get().logout();
-            });
           } else {
-            // No valid tokens, ensure clean state
+            // No valid token, ensure clean state
             get().logout();
           }
         } catch (error) {
@@ -227,7 +186,6 @@ export const useAuthStore = create<AuthStore>()(
       partialize: (state) => ({
         user: state.user,
         token: state.token,
-        refreshToken: state.refreshToken,
         expiresAt: state.expiresAt,
         isAuthenticated: state.isAuthenticated,
       }),
@@ -256,7 +214,6 @@ export const useAuthActions = () => {
     signup: state.signup,
     logout: state.logout,
     deleteAccount: state.deleteAccount,
-    refreshTokens: state.refreshTokens,
     clearError: state.clearError,
     setLoading: state.setLoading,
     checkAuthStatus: state.checkAuthStatus,

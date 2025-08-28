@@ -3,9 +3,8 @@ import type { AuthConfig } from "../types/auth";
 // Authentication configuration constants
 export const AUTH_CONFIG: AuthConfig = {
   tokenStorageKey: "auth_token",
-  refreshTokenStorageKey: "refresh_token",
-  tokenExpirationBuffer: 5, // Refresh token 5 minutes before expiration
-  autoRefreshEnabled: true,
+  tokenExpirationBuffer: 5, // Check token 5 minutes before expiration
+  autoRefreshEnabled: false,
   persistAuth: true,
 };
 
@@ -14,9 +13,6 @@ export const AUTH_ENDPOINTS = {
   LOGIN: "/endpoint/login",
   SIGNUP: "/endpoint/signup",
   DELETE_ACCOUNT: "/endpoint/deleteAccount",
-  REFRESH_TOKEN: "/endpoint/refresh",
-  LOGOUT: "/endpoint/logout",
-  PROFILE: "/endpoint/profile",
 } as const;
 
 // Token configuration
@@ -29,7 +25,6 @@ export const TOKEN_CONFIG = {
 // Storage keys
 export const STORAGE_KEYS = {
   AUTH_TOKEN: AUTH_CONFIG.tokenStorageKey,
-  REFRESH_TOKEN: AUTH_CONFIG.refreshTokenStorageKey,
   USER_DATA: "user_data",
   AUTH_STATE: "auth_state",
 } as const;
@@ -37,7 +32,6 @@ export const STORAGE_KEYS = {
 // Cookie configuration
 export const COOKIE_CONFIG = {
   TOKEN_COOKIE_NAME: "auth_token",
-  REFRESH_TOKEN_COOKIE_NAME: "refresh_token",
   DEFAULT_OPTIONS: {
     secure: process.env.NODE_ENV === "production",
     sameSite: "strict" as const,
@@ -69,9 +63,7 @@ export const AUTH_ERROR_MESSAGES = {
   NETWORK_ERROR: "Network error. Please check your connection",
   SIGNUP_FAILED: "Failed to create account. Please try again",
   LOGIN_FAILED: "Login failed. Please check your credentials",
-  LOGOUT_FAILED: "Failed to logout properly",
   DELETE_ACCOUNT_FAILED: "Failed to delete account",
-  REFRESH_TOKEN_FAILED: "Failed to refresh authentication",
 } as const;
 
 // Validation patterns
